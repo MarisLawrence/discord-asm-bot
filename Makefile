@@ -33,7 +33,7 @@ else ifeq ($(PLATFORM),windows)
     OBJ      := bot_win64.obj
     OUT      := $(TARGET).exe
     ASMFLAGS := -f win64
-    LDFLAGS  := -lssl -lcrypto -lws2_32 -lkernel32
+    LDFLAGS  := -lssl -lcrypto -Wl,--image-base,0x400000 -Wl,--disable-high-entropy-va -lws2_32 -lkernel32
     STRIP    := strip --strip-all $(OUT)
 else ifeq ($(PLATFORM),macos)
     UNAME_M  := $(shell uname -m)
