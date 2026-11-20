@@ -15,7 +15,7 @@ DEFAULT REL
 default rel
 global main
 
-extern getenv, printf, puts, exit, memset, strlen, strstr, strcmp, poll, signal
+extern getenv, printf, puts, exit, memset, strlen, strstr, strcmp, poll, signal, sleep, atoi
 extern getaddrinfo, freeaddrinfo, socket, connect, close
 extern OPENSSL_init_ssl, TLS_client_method, SSL_CTX_new, SSL_CTX_set_default_verify_paths
 extern SSL_CTX_set_verify, SSL_new, SSL_set_fd, SSL_ctrl, SSL_connect
@@ -40,6 +40,10 @@ section .data
     msg_ws          db "[2/3] WebSocket 101 Switching Protocols OK.", 0
     msg_online      db "[3/3] Bot ONLINE! Listening for !ping and !sysinfo (Ctrl+C to wipe RAM & exit).", 0
     msg_hb          db "[PING] Heartbeat sent.", 0
+    msg_reconn      db "[WARN] Gateway disconnected/reconnect requested. Retrying in 5s...", 0
+    key_hb_int      db '"heartbeat_interval":', 0
+    key_op7         db '"op":7', 0
+    key_op9         db '"op":9', 0
     fmt_cmd         db "[CMD] Channel %s | Command: %s", 10, 0
     msg_clean_exit  db 10, "[EXIT] Sensitive buffers wiped from RAM. Clean shutdown.", 0
 
@@ -113,6 +117,7 @@ section .bss
     has_owner       resb 1
 
     poll_fds        resb 8
+    hb_interval     resd 1
     hb_counter      resd 1
 
     recv_buf        resb 16384
@@ -720,6 +725,8 @@ main:
     rep movsb
     mov byte [rdi], 0
 
+    mov dword [hb_interval], 25
+.connect_gateway:
     lea rdi, [hints]
     xor esi, esi
     mov edx, 48
@@ -861,12 +868,50 @@ main:
     test eax, eax
     jle .tick_heartbeat
 
+    test word [poll_fds + 6], 0x18
+    jnz .do_reconnect
+
     test word [poll_fds + 6], 1
     jz .tick_heartbeat
 
     call ws_recv_frame
+    cmp eax, 0
+    jle .do_reconnect
+    cmp eax, 0x88
+    je .do_reconnect
     cmp eax, 0x81
     jne .tick_heartbeat
+
+    ; Opcode 7 (Reconnect) ou Opcode 9 (Invalid Session)
+    lea rdi, [clean_json]
+    lea rsi, [key_op7]
+    call strstr
+    test rax, rax
+    jnz .do_reconnect
+
+    lea rdi, [clean_json]
+    lea rsi, [key_op9]
+    call strstr
+    test rax, rax
+    jnz .do_reconnect
+
+    ; Heartbeat dinamico (Opcode 10 Hello)
+    lea rdi, [clean_json]
+    lea rsi, [key_hb_int]
+    call strstr
+    test rax, rax
+    jz .check_msg_create
+    lea rdi, [rax + 21]
+    call atoi
+    cmp eax, 5000
+    jl .check_msg_create
+    xor edx, edx
+    mov ecx, 1000
+    div ecx
+    sub eax, 2
+    mov [hb_interval], eax
+
+.check_msg_create:
 
     lea rdi, [clean_json]
     lea rsi, [key_msg_create]
@@ -960,7 +1005,8 @@ main:
 
 .tick_heartbeat:
     inc dword [hb_counter]
-    cmp dword [hb_counter], 25
+    mov eax, [hb_interval]
+    cmp dword [hb_counter], eax
     jl .event_loop
 
     mov dword [hb_counter], 0
@@ -971,6 +1017,27 @@ main:
     lea rdi, [msg_hb]
     call puts
     jmp .event_loop
+
+.do_reconnect:
+    lea rdi, [msg_reconn]
+    call puts
+    mov rdi, [ssl_conn]
+    test rdi, rdi
+    jz .reconn_close_sock
+    call SSL_shutdown
+    mov rdi, [ssl_conn]
+    call SSL_free
+    mov qword [ssl_conn], 0
+.reconn_close_sock:
+    mov edi, [sock_fd]
+    cmp edi, 0
+    jle .reconn_sleep
+    call close
+    mov dword [sock_fd], 0
+.reconn_sleep:
+    mov edi, 5
+    call sleep
+    jmp .connect_gateway
 
 .no_token:
     lea rdi, [err_token]
