@@ -36,13 +36,19 @@ else ifeq ($(PLATFORM),windows)
     LDFLAGS  := -lssl -lcrypto -lws2_32 -lkernel32
     STRIP    := strip --strip-all $(OUT)
 else ifeq ($(PLATFORM),macos)
-    SRC      := bot_macos.asm
-    OBJ      := bot_macos.o
+    UNAME_M  := $(shell uname -m)
     OUT      := $(TARGET)
-    ASMFLAGS := -f macho64
-    BREW_SSL := $(shell brew --prefix openssl@3 2>/dev/null || echo /usr/local/opt/openssl@3)
+    BREW_SSL := $(shell brew --prefix openssl@3 2>/dev/null || echo /opt/homebrew/opt/openssl@3)
     LDFLAGS  := -L$(BREW_SSL)/lib -lssl -lcrypto
     STRIP    := strip -x $(OUT)
+    ifeq ($(UNAME_M),arm64)
+        SRC  := bot_macos_arm64.s
+        OBJ  := bot_macos_arm64.o
+    else
+        SRC  := bot_macos.asm
+        OBJ  := bot_macos.o
+        ASMFLAGS := -f macho64
+    endif
 endif
 
 .PHONY: all clean check-all
@@ -50,7 +56,7 @@ endif
 all: $(OUT)
 
 $(OUT): $(SRC)
-	$(NASM) $(ASMFLAGS) $(SRC) -o $(OBJ)
+	$(if $(filter %.s,$(SRC)),$(CC) -arch arm64 -c $(SRC) -o $(OBJ),$(NASM) $(ASMFLAGS) $(SRC) -o $(OBJ))
 	$(CC) $(OBJ) -o $(OUT) $(LDFLAGS)
 	$(STRIP)
 
