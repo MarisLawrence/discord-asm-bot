@@ -1,48 +1,45 @@
-# Daimonos — Multiplatform Discord Bot in Pure Assembly
+# Daimonos
 
-Minimalist, zero-runtime Discord Gateway & REST bot written in **pure Assembly**, natively supporting **4 architectures and operating systems** without any high-level runtime, garbage collector, or wrapper libraries.
+Um bot para Discord escrito em **Assembly puro** (zero *runtime*, zero *garbage collector*, zero alocação dinâmica no loop principal), com binários de **~16 KB a 60 KB** e consumo residente entre **3 MB e 6 MB de RAM**.
 
-> **Methodology:** 100% Pure Vibe Coding using **Gemini Hydrogen**.
+## Arquiteturas Suportadas (5 Alvos Nativos)
 
----
+| Sistema Operacional | Arquitetura | Formato | Código-Fonte |
+| :--- | :--- | :--- | :--- |
+| **Linux** | x86_64 | ELF64 | bot.asm (NASM) |
+| **Linux** | ARM64 (AArch64) | ELF64 | bot_linux_arm64.s (GAS) |
+| **Windows** | x86_64 | PE32+ | bot_win64.asm (NASM) |
+| **macOS** | x86_64 (Intel) | Mach-O 64 | bot_macos.asm (NASM) |
+| **macOS** | ARM64 (Apple Silicon) | Mach-O 64 | bot_macos_arm64.s (Clang/GAS) |
 
-## Supported Architectures & Platforms
+## Novidades e Melhorias (v2.1.0)
 
-| Target Platform | Architecture | Source File | Assembler & Format | Calling Convention (ABI) | System Telemetry (`!sysinfo`) |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Linux** | `x86_64` | `bot.asm` | NASM (`ELF64`) | System V AMD64 ABI | Direct kernel `syscall` (`SYS_uname`, `SYS_sysinfo`) |
-| **Windows** | `x86_64` | `bot_win64.asm` | NASM (`Win64 / PE32+`) | Microsoft x64 ABI | Win32 `GetTickCount64` & `GlobalMemoryStatusEx` |
-| **macOS (Intel)** | `x86_64` | `bot_macos.asm` | NASM (`Mach-O 64`) | System V AMD64 ABI | Darwin `sysctlbyname` (`kern.boottime`, `hw.memsize`) |
-| **macOS (Apple Silicon)** | `ARM64 / AArch64` | `bot_macos_arm64.s` | Apple Clang / GAS (`Mach-O`) | Apple ARM64 ABI | Darwin `sysctlbyname` (`kern.boottime`, `hw.memsize`) |
+* **Suporte Nativo a Linux ARM64 (AArch64):** Novo port ELF64 otimizado para servidores ARM (Oracle Ampere, AWS Graviton) e Raspberry Pi, compilado e testado nativamente no CI (ubuntu-24.04-arm).
+* **Reconexão Automática 24/7 (Linux x86_64):** Detecção de quedas de socket (POLLERR/POLLHUP), frames de fechamento (0x88) e eventos do Discord Gateway (Opcode 7 Reconnect / Opcode 9 Invalid Session) com limpeza TLS e reconexão automática.
+* **Heartbeat Dinâmico:** Leitura em tempo real do heartbeat_interval enviado no Opcode 10 Hello, ajustando o relógio do bot ao ritmo exigido pelo servidor.
+* **Segurança e Auditoria (SECURITY.md):** Verificação estrita de certificados TLS 1.3 (SSL_VERIFY_PEER), limpeza de segredos na RAM (DISCORD_TOKEN e cabeçalhos HTTP) e pilha não-executável (noexecstack, RELRO).
+* **Smoke Tests Automatizados no CI:** Todos os 5 binários são compilados e executados em seus respectivos sistemas no GitHub Actions para garantir integridade da ABI antes da publicação.
 
-### Core Architecture
-- **TLS 1.3 & Strict Certificate Verification:** Links directly against OpenSSL (`libssl` / `libcrypto`) with SNI (`SSL_ctrl`) and default CA trust store validation (`SSL_CTX_set_default_verify_paths`).
-- **Custom RFC 6455 WebSocket Engine:** Handcrafted binary frame encoder/decoder with `RAND_bytes` 32-bit XOR payload masking and 16-bit extended length framing.
-- **Zero-Allocation JSON Scanner:** In-place string extraction (`strstr` + `strlen` pointer arithmetic) for `MESSAGE_CREATE` dispatch events, `!ping`, and `!sysinfo`.
-- **Hardened Memory Hygiene:** Zeroes sensitive token and HTTP `Authorization` buffers in RAM upon `SIGINT` / `SIGTERM` or after REST API calls.
+## Como Usar
 
----
+### Opção 1: Baixar Binário Pronto (Recomendado)
+1. Acesse a aba **[Releases](../../releases)** e baixe o executável da sua plataforma junto com o SHA256SUMS.txt.
+2. Valide a integridade:
+```bash
+sha256sum -c SHA256SUMS.txt --ignore-missing
+```
+3. Defina o token e execute:
+```bash
+export DISCORD_TOKEN="seu_token_aqui"
+./daimonos-linux-x86_64
+```
 
-## Build & Run
-
-The unified `Makefile` automatically detects your OS and CPU architecture (`uname -s` / `uname -m`):
-
+### Opção 2: Compilar do Código-Fonte
+Requer gcc/clang, make, openssl (libssl-dev) e nasm (para alvos x86_64):
 ```bash
 make
+DISCORD_TOKEN="seu_token_aqui" ./daimonos
 ```
 
-- **Linux (`x86_64`):** `make && DISCORD_TOKEN="your_token" ./daimonos`
-- **Windows (`x64` via MSYS2 MinGW64):** `make && DISCORD_TOKEN="your_token" ./daimonos.exe`
-- **macOS (`Intel x86_64` & `Apple Silicon ARM64`):** `brew install nasm openssl@3 && make && DISCORD_TOKEN="your_token" ./daimonos`
-
-### Optional Owner Lock
-Restrict command execution (`!ping`, `!sysinfo`) to a single Discord User ID:
-```bash
-export ALLOWED_USER_ID="123456789012345678"
-```
-
----
-
-## License
-
-Released under the [MIT License](LICENSE).
+## Segurança
+Consulte [SECURITY.md](SECURITY.md) para detalhes sobre a arquitetura de segurança, builds reprodutíveis e reporte de vulnerabilidades.
