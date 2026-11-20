@@ -1,0 +1,72 @@
+name: Multiplatform Assembly Build (Linux, Windows, macOS)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-linux:
+    name: Linux x86_64 (ELF64)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install NASM & OpenSSL dev
+        run: sudo apt-get update && sudo apt-get install -y nasm gcc libssl-dev
+      - name: Build & Audit ELF64
+        run: |
+          make
+          file daimonos
+          ls -lh daimonos
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: daimonos-linux-x86_64
+          path: daimonos
+
+  build-windows:
+    name: Windows x86_64 (Win64)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup MSYS2 MinGW64
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-nasm
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-openssl
+      - name: Build & Audit Win64 PE32+
+        run: |
+          make
+          file daimonos.exe
+          ls -lh daimonos.exe
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: daimonos-windows-x86_64
+          path: daimonos.exe
+
+  build-macos:
+    name: macOS x86_64 (Mach-O 64)
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install NASM & OpenSSL
+        run: brew install nasm openssl@3
+      - name: Build & Audit Mach-O 64
+        run: |
+          make
+          file daimonos
+          ls -lh daimonos
+      - name: Upload macOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: daimonos-macos-x86_64
+          path: daimonos
