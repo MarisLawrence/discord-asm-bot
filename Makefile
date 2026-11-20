@@ -22,12 +22,19 @@ endif
 
 # Platform-specific flags
 ifeq ($(PLATFORM),linux)
-    SRC      := bot.asm
-    OBJ      := bot.o
+    UNAME_M  := $(shell uname -m)
     OUT      := $(TARGET)
-    ASMFLAGS := -f elf64
-    LDFLAGS  := -lssl -lcrypto -no-pie -no-pie -Wl,-z,noexecstack,-z,relro,-z,now
     STRIP    := strip --strip-all $(OUT)
+    ifeq ($(UNAME_M),aarch64)
+        SRC      := bot_linux_arm64.s
+        OBJ      := bot_linux_arm64.o
+        LDFLAGS  := -lssl -lcrypto -Wl,-z,noexecstack,-z,relro,-z,now
+    else
+        SRC      := bot.asm
+        OBJ      := bot.o
+        ASMFLAGS := -f elf64
+        LDFLAGS  := -lssl -lcrypto -no-pie -Wl,-z,noexecstack,-z,relro,-z,now
+    endif
 else ifeq ($(PLATFORM),windows)
     SRC      := bot_win64.asm
     OBJ      := bot_win64.obj
@@ -56,7 +63,7 @@ endif
 all: $(OUT)
 
 $(OUT): $(SRC)
-	$(if $(filter %.s,$(SRC)),$(CC) -arch arm64 -c $(SRC) -o $(OBJ),$(NASM) $(ASMFLAGS) $(SRC) -o $(OBJ))
+	$(if $(filter %.s,$(SRC)),$(CC) $(if $(filter macos,$(PLATFORM)),-arch arm64) -c $(SRC) -o $(OBJ),$(NASM) $(ASMFLAGS) $(SRC) -o $(OBJ))
 	$(CC) $(OBJ) -o $(OUT) $(LDFLAGS)
 	$(STRIP)
 
@@ -65,8 +72,8 @@ check-all:
 	$(NASM) -f elf64 bot.asm -o bot.o
 	$(NASM) -f win64 bot_win64.asm -o bot_win64.obj
 	$(NASM) -f macho64 bot_macos.asm -o bot_macos.o
-	rm -f bot.o bot_win64.obj bot_macos.o
+	rm -f bot.o bot_win64.obj bot_macos.o bot_macos_arm64.o bot_linux_arm64.o
 	@echo "[OK] Linux (elf64), Windows (win64) & macOS (macho64) assembled cleanly."
 
 clean:
-	rm -f bot.o bot_win64.obj bot_macos.o $(TARGET) $(TARGET).exe
+	rm -f bot.o bot_win64.obj bot_macos.o bot_macos_arm64.o bot_linux_arm64.o $(TARGET) $(TARGET).exe

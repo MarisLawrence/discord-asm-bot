@@ -29,6 +29,24 @@ jobs:
           name: daimonos-linux-x86_64
           path: daimonos-linux-x86_64
 
+  build-linux-arm64:
+    name: Linux ARM64 (AArch64 ELF64)
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y gcc make libssl-dev
+      - name: Build & Audit AArch64 ELF64
+        run: |
+          make
+          mv daimonos daimonos-linux-arm64
+          file daimonos-linux-arm64
+          (./daimonos-linux-arm64 && exit 1) || [ $? -eq 1 ]
+      - uses: actions/upload-artifact@v5
+        with:
+          name: daimonos-linux-arm64
+          path: daimonos-linux-arm64
+
   build-windows:
     name: Windows x86_64 (Win64)
     runs-on: windows-latest
@@ -91,7 +109,7 @@ jobs:
 
   release:
     name: Publish Official Release
-    needs: [build-linux, build-windows, build-macos, build-macos-arm64]
+    needs: [build-linux, build-linux-arm64, build-windows, build-macos, build-macos-arm64]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
