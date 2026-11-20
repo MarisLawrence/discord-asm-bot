@@ -1,0 +1,6 @@
+*.o
+bot
+daimonos
+.env
+*.pem
+*.key
