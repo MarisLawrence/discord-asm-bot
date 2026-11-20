@@ -26,7 +26,7 @@ ifeq ($(PLATFORM),linux)
     OBJ      := bot.o
     OUT      := $(TARGET)
     ASMFLAGS := -f elf64
-    LDFLAGS  := -lssl -lcrypto -Wl,-z,noexecstack,-z,relro,-z,now
+    LDFLAGS  := -lssl -lcrypto -no-pie -Wl,-z,noexecstack,-z,relro,-z,now
     STRIP    := strip --strip-all $(OUT)
 else ifeq ($(PLATFORM),windows)
     SRC      := bot_win64.asm
