@@ -23,6 +23,7 @@ jobs:
           make
           mv daimonos daimonos-linux-x86_64
           file daimonos-linux-x86_64
+          (./daimonos-linux-x86_64 && exit 1) || [ $? -eq 1 ]
       - uses: actions/upload-artifact@v4
         with:
           name: daimonos-linux-x86_64
@@ -46,6 +47,7 @@ jobs:
           make
           mv daimonos.exe daimonos-windows-x86_64.exe
           file daimonos-windows-x86_64.exe
+          (./daimonos-windows-x86_64.exe && exit 1) || [ $? -eq 1 ]
       - uses: actions/upload-artifact@v4
         with:
           name: daimonos-windows-x86_64
@@ -63,6 +65,7 @@ jobs:
           make
           mv daimonos daimonos-macos-x86_64
           file daimonos-macos-x86_64
+          (./daimonos-macos-x86_64 && exit 1) || [ $? -eq 1 ]
       - uses: actions/upload-artifact@v4
         with:
           name: daimonos-macos-x86_64
@@ -80,6 +83,7 @@ jobs:
           make
           mv daimonos daimonos-macos-arm64
           file daimonos-macos-arm64
+          (./daimonos-macos-arm64 && exit 1) || [ $? -eq 1 ]
       - uses: actions/upload-artifact@v4
         with:
           name: daimonos-macos-arm64
