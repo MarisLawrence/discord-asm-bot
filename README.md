@@ -1,45 +1,43 @@
 # Daimonos
 
-Um bot para Discord escrito em **Assembly puro** (zero *runtime*, zero *garbage collector*, zero alocação dinâmica no loop principal), com binários de **~16 KB a 60 KB** e consumo residente entre **3 MB e 6 MB de RAM**.
+A Discord bot written in **pure Assembly** (zero runtime, zero garbage collector, zero dynamic heap allocation in the main event loop), producing **~16 KB to 60 KB** binaries with **3 MB to 6 MB** resident memory usage.
 
-## Arquiteturas Suportadas (5 Alvos Nativos)
+## Supported Platforms (5 Native Targets)
 
-| Sistema Operacional | Arquitetura | Formato | Código-Fonte |
+| Operating System | Architectures | Format | Source Files |
 | :--- | :--- | :--- | :--- |
-| **Linux** | x86_64 | ELF64 | bot.asm (NASM) |
-| **Linux** | ARM64 (AArch64) | ELF64 | bot_linux_arm64.s (GAS) |
+| **Linux** | x86_64, ARM64 (AArch64) | ELF64 | bot.asm (NASM), bot_linux_arm64.s (GAS) |
 | **Windows** | x86_64 | PE32+ | bot_win64.asm (NASM) |
-| **macOS** | x86_64 (Intel) | Mach-O 64 | bot_macos.asm (NASM) |
-| **macOS** | ARM64 (Apple Silicon) | Mach-O 64 | bot_macos_arm64.s (Clang/GAS) |
+| **macOS** | x86_64 (Intel), ARM64 (Apple Silicon) | Mach-O 64 | bot_macos.asm (NASM), bot_macos_arm64.s (Clang/GAS) |
 
-## Novidades e Melhorias (v2.1.0)
+## What is New (v2.1.0)
 
-* **Suporte Nativo a Linux ARM64 (AArch64):** Novo port ELF64 otimizado para servidores ARM (Oracle Ampere, AWS Graviton) e Raspberry Pi, compilado e testado nativamente no CI (ubuntu-24.04-arm).
-* **Reconexão Automática 24/7 (Linux x86_64):** Detecção de quedas de socket (POLLERR/POLLHUP), frames de fechamento (0x88) e eventos do Discord Gateway (Opcode 7 Reconnect / Opcode 9 Invalid Session) com limpeza TLS e reconexão automática.
-* **Heartbeat Dinâmico:** Leitura em tempo real do heartbeat_interval enviado no Opcode 10 Hello, ajustando o relógio do bot ao ritmo exigido pelo servidor.
-* **Segurança e Auditoria (SECURITY.md):** Verificação estrita de certificados TLS 1.3 (SSL_VERIFY_PEER), limpeza de segredos na RAM (DISCORD_TOKEN e cabeçalhos HTTP) e pilha não-executável (noexecstack, RELRO).
-* **Smoke Tests Automatizados no CI:** Todos os 5 binários são compilados e executados em seus respectivos sistemas no GitHub Actions para garantir integridade da ABI antes da publicação.
+* **Native Linux ARM64 (AArch64) Support:** New ELF64 port targeting ARM servers (Oracle Ampere, AWS Graviton) and Raspberry Pi, natively built and tested in CI (ubuntu-24.04-arm).
+* **24/7 Auto-Reconnect (Linux x86_64):** Detects socket drops (POLLERR/POLLHUP), WebSocket close frames (0x88), and Discord Gateway events (Opcode 7 Reconnect / Opcode 9 Invalid Session) with clean TLS teardown and automatic reconnection.
+* **Dynamic Heartbeat:** Parses heartbeat_interval in real time from Opcode 10 Hello, syncing the bot clock directly to the server requirement.
+* **Security & Auditing (SECURITY.md):** Strict TLS 1.3 certificate verification (SSL_VERIFY_PEER), RAM secret wiping (DISCORD_TOKEN and HTTP headers), and non-executable stack hardening (noexecstack, RELRO).
+* **Automated CI Smoke Tests:** All 5 binaries are compiled and executed on their respective native runners in GitHub Actions to verify ABI integrity before release.
 
-## Como Usar
+## Usage
 
-### Opção 1: Baixar Binário Pronto (Recomendado)
-1. Acesse a aba **[Releases](../../releases)** e baixe o executável da sua plataforma junto com o SHA256SUMS.txt.
-2. Valide a integridade:
+### Option 1: Download Prebuilt Binary (Recommended)
+1. Go to the **[Releases](../../releases)** tab and download the binary for your platform along with SHA256SUMS.txt.
+2. Verify integrity:
 ```bash
 sha256sum -c SHA256SUMS.txt --ignore-missing
 ```
-3. Defina o token e execute:
+3. Export your token and run:
 ```bash
-export DISCORD_TOKEN="seu_token_aqui"
+export DISCORD_TOKEN="your_token_here"
 ./daimonos-linux-x86_64
 ```
 
-### Opção 2: Compilar do Código-Fonte
-Requer gcc/clang, make, openssl (libssl-dev) e nasm (para alvos x86_64):
+### Option 2: Build from Source
+Requires gcc/clang, make, openssl (libssl-dev), and nasm (for x86_64 targets):
 ```bash
 make
-DISCORD_TOKEN="seu_token_aqui" ./daimonos
+DISCORD_TOKEN="your_token_here" ./daimonos
 ```
 
-## Segurança
-Consulte [SECURITY.md](SECURITY.md) para detalhes sobre a arquitetura de segurança, builds reprodutíveis e reporte de vulnerabilidades.
+## Security
+See [SECURITY.md](SECURITY.md) for details on the security architecture, reproducible builds, and vulnerability reporting.
