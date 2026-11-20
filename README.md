@@ -45,3 +45,8 @@ Built purely through **vibecoding** using **Gemini Hydrogen** and **Neon**.
 
 ## Security
 See [SECURITY.md](SECURITY.md) for details on the security architecture, reproducible builds, and vulnerability reporting.
+
+## Author & License
+Created and architected by **[MarisLawrence](https://github.com/MarisLawrence)** (built purely through **vibecoding** using **Gemini Hydrogen** and **Neon**).
+
+Licensed under the [MIT License](LICENSE).

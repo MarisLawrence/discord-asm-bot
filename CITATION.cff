@@ -1,0 +1,7 @@
+cff-version: 1.2.0
+message: "If you use or reference Daimonos in your work, please cite it as below."
+title: "Daimonos"
+authors:
+  - alias: "MarisLawrence"
+url: "https://github.com/MarisLawrence/discord-asm-bot"
+license: "MIT"
