@@ -39,5 +39,9 @@ make
 DISCORD_TOKEN="your_token_here" ./daimonos
 ```
 
+
+## Development
+Built purely through **vibecoding** using **Gemini Hydrogen** and **Neon**.
+
 ## Security
 See [SECURITY.md](SECURITY.md) for details on the security architecture, reproducible builds, and vulnerability reporting.
