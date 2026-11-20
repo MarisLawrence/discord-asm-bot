@@ -1,3 +1,4 @@
+DEFAULT REL
 ; ============================================================================
 ; Daimonos - Minimalist Discord Gateway & REST Bot in Pure x86_64 Assembly
 ; Target: Windows x64 (Microsoft x64 ABI, Win64) | Assembler: NASM

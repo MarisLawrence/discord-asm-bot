@@ -1,3 +1,4 @@
+DEFAULT REL
 ; ============================================================================
 ; Daimonos - Minimalist Discord Gateway & REST Bot in Pure x86_64 Assembly
 ; Methodology: 100% Pure Vibe Coding using Gemini Hydrogen
